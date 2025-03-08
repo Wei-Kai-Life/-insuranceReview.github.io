@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保險雷達圖</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .item {
+            border: 2px solid green;
+            padding: 10px;
+            text-align: center;
+            width: 120px;
+        }
+
+        .title {
+            background-color: lightgreen;
+            color: black;
+            padding: 5px;
+            font-weight: bold;
+        }
+
+        .input {
+            width: 80%;
+            padding: 5px;
+            margin-top: 5px;
+        }
+
+        .red-border {
+            border-color: red !important;
+        }
+
+        .red-title {
+            background-color: red !important;
+            color: white !important;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        canvas {
+            max-width: 500px;
+            max-height: 500px;
+            margin: auto;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="capture">
+        <div class="container" id="insuranceContainer"></div>
+        <div class="button-container">
+            <button onclick="updateRadarChart()">更新雷達圖</button>
+            <button onclick="saveRadarChart()">另存雷達圖</button>
+        </div>
+        <canvas id="radarChart"></canvas>
+    </div>
+
+
+    <script>
+        const categories = [
+            { title: "失能給付", options: ["失能扶助金(次)", "失能扶助金(月)", "失能扶助金(年)"], pngSrc: "https://i.ibb.co/svTr0vF7/wheelchair.png" },
+            { title: "身故給付", options: ["一般身故給付+投資型"], pngSrc: "https://i.ibb.co/B2stQ1nx/grim-reaper.png" },
+            { title: "意外醫療", options: ["意外住院日額"], pngSrc: "https://i.ibb.co/dwsjLnzR/ambulance.png" },
+            { title: "住院日額", options: ["住院醫療日額"], pngSrc: "https://i.ibb.co/Kj74471Q/hospital.png" },
+            { title: "手術醫療", options: ["手術醫療(次)"], pngSrc: "https://i.ibb.co/CKH4jdHN/surgery.png" },
+            { title: "實支實付", options: ["住院醫療(雜費)"], pngSrc: "https://i.ibb.co/1JYSRsbv/money.png" },
+            { title: "癌症醫療", options: ["癌症醫療(次)"], pngSrc: "https://i.ibb.co/Rp2DfYTy/cancer-cell.png" },
+            { title: "重疾特傷", options: ["3類重傷病險加總(次)"], pngSrc: "https://i.ibb.co/HLhdDDWG/heart.png" },
+            { title: "長照特傷", options: ["長照給付(月)", "長照給付(年)"], pngSrc: "https://i.ibb.co/dwsjLnzR/ambulance.png" }
+        ];
+
+        const container = document.getElementById("insuranceContainer");
+        categories.forEach(category => {
+            const div = document.createElement("div");
+            div.classList.add("item");
+            div.innerHTML = `
+                <img src=${category.pngSrc} width="50px" crossorigin="anonymous">
+                <div class="title">${category.title}</div>
+                <select class="input">${category.options.map(opt => `<option>${opt}</option>`).join("")}</select>
+                <input type="number" class="input current" placeholder="目前保額">
+                <input type="number" class="input suggested" placeholder="建議保額">
+                <div class="values">0 / 0</div>
+            `;
+            container.appendChild(div);
+        });
+
+        function updateFields() {
+            document.querySelectorAll(".item").forEach(item => {
+                const current = parseFloat(item.querySelector(".current").value) || 0;
+                const suggested = parseFloat(item.querySelector(".suggested").value) || 0;
+                item.querySelector(".values").textContent = `${current} / ${suggested}`;
+
+                if (current === 0) {
+                    item.classList.add("red-border");
+                    item.querySelector(".title").classList.add("red-title");
+                } else {
+                    item.classList.remove("red-border");
+                    item.querySelector(".title").classList.remove("red-title");
+                }
+            });
+        }
+
+        document.querySelectorAll(".input").forEach(input => {
+            input.addEventListener("input", updateFields);
+        });
+
+        function updateRadarChart() {
+            const labels = categories.map(cat => cat.title);
+            const currentValues = [];
+            document.querySelectorAll(".item").forEach(item => {
+                const current = parseFloat(item.querySelector(".current").value) || 0;
+                const suggested = parseFloat(item.querySelector(".suggested").value) || 0;
+                const ratio = suggested > 0 ? Math.min(current / suggested, 1) : 0;
+                currentValues.push(ratio);
+            });
+
+            radarChart.data.datasets[0].data = currentValues;
+            radarChart.update();
+        }
+
+        function saveRadarChart() {
+            let captureElement = document.getElementById("capture");
+
+            // 確保所有圖片都載入完成
+            let images = captureElement.getElementsByTagName("img");
+            let loadedCount = 0;
+
+            for (let img of images) {
+                img.crossOrigin = "anonymous"; // 確保圖片允許跨域存取
+                if (img.complete) {
+                    loadedCount++;
+                } else {
+                    img.onload = () => {
+                        loadedCount++;
+                        if (loadedCount === images.length) {
+                            captureScreenshot();
+                        }
+                    };
+                }
+            }
+
+            // 如果圖片已經全部載入，則直接截圖
+            if (loadedCount === images.length) {
+                captureScreenshot();
+            }
+        }
+
+        // 進行 html2canvas 擷取
+        function captureScreenshot() {
+            let captureElement = document.getElementById("capture");
+
+            html2canvas(captureElement, {
+                useCORS: true, // 允許跨域
+                logging: false, // 減少 console 訊息
+                scale: 2 // 提高解析度
+            }).then(canvas => {
+                let image = canvas.toDataURL("image/png"); // 轉換為 Base64
+                let downloadLink = document.createElement("a");
+                downloadLink.href = image;
+                downloadLink.download = "screenshot.png"; // 設定下載的檔名
+                downloadLink.click();
+            });
+        }
+
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        const radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: categories.map(cat => cat.title),
+                datasets: [{
+                    label: "保障達成率",
+                    data: new Array(categories.length).fill(0),
+                    backgroundColor: "rgba(0, 123, 255, 0.2)",
+                    borderColor: "rgba(0, 123, 255, 1)",
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 1,
+                        ticks: { stepSize: 0.2 }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
