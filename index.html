@@ -98,6 +98,7 @@
         #input3 {
             border: 1px black solid;
             border-radius: 10px;
+            padding-bottom: 5px;
         }
     </style>
 </head>
@@ -168,9 +169,10 @@
                 <div class="title">${category.title}</div>
                 <select id="input1" class="input">${category.options.map(opt => `<option>${opt}</option>`).join("")}</select>
                 <span class="input-number">目前保額：</span>
-                <div id="input2" type="number" class="input current" placeholder="目前保額" min="0" contenteditable="true">0</div>
+                <input id="input2" type="number" class="input current" placeholder="目前保額" min="0" >
+                <br>
                 <span class="input-number">建議保額：</span>
-                <div id="input3" type="number" class="input suggested" placeholder="建議保額" min="0" contenteditable="true">0</div>
+                <input id="input3" type="number" class="input suggested" placeholder="建議保額" min="0" >
                 <div class="values">0 / 0</div>
             `;
             container.appendChild(div);
@@ -183,8 +185,8 @@
                 let valuesDiv = item.querySelector(".values");
 
                 // 取得數值（移除前導0，並確保最小值為0）
-                let currentValue = parseInt(currentDiv.textContent.replace(/^0+/, ""), 10) || '';
-                let suggestedValue = parseInt(suggestedDiv.textContent.replace(/^0+/, ""), 10) || '';
+                let currentValue = parseInt(currentDiv.value.replace(/^0+/, ""), 10) || '';
+                let suggestedValue = parseInt(suggestedDiv.value.replace(/^0+/, ""), 10) || '';
 
                 // 更新內容（防止負數）
                 currentDiv.textContent = currentValue < 0 ? "0" : currentValue;
@@ -247,8 +249,8 @@
 
             document.querySelectorAll(".item").forEach(item => {
                 // 修正數值取得方式，改用 .textContent
-                const current = parseFloat(item.querySelector(".current").textContent.trim()) || 0;
-                const suggested = parseFloat(item.querySelector(".suggested").textContent.trim()) || 0;
+                const current = parseFloat(item.querySelector(".current").value.trim()) || 0;
+                const suggested = parseFloat(item.querySelector(".suggested").value.trim()) || 0;
 
                 // 計算比例，避免 NaN，並確保 suggested = 0 時不影響圖表
                 let ratio = 0;
@@ -294,6 +296,13 @@
                 select.parentNode.insertBefore(div, select);
                 select.style.display = "none";
             });
+
+            document.querySelectorAll("input").forEach(input => {
+                let span = document.createElement("span");
+                span.innerText = input.value;
+                input.parentNode.insertBefore(span, input.nextSibling);
+            });
+
 
             // 開始擷取畫面
             html2canvas(captureElement, {
@@ -399,14 +408,11 @@
                 let selection = window.getSelection();
                 let inputValue = this.innerText;
 
-                // 將游標移到最後
-                range.selectNodeContents(editableDiv);
-                range.collapse(false); // false 表示移動到最後
-                selection.removeAllRanges();
-                selection.addRange(range);
 
-                 // 確保只允許數字，並防止數字顛倒
-                 let fixedValue = inputValue.replace(/\D/g, ''); // 移除非數字
+
+
+                // 確保只允許數字，並防止數字顛倒
+                let fixedValue = inputValue.replace(/\D/g, ''); // 移除非數字
                 this.innerText = fixedValue;
             });
         });
@@ -418,15 +424,10 @@
                 let selection = window.getSelection();
                 let inputValue = this.innerText;
 
-            
-                // 將游標移到最後
-                range.selectNodeContents(editableDiv);
-                range.collapse(false); // false 表示移動到最後
-                selection.removeAllRanges();
-                selection.addRange(range);
 
-                 // 確保只允許數字，並防止數字顛倒
-                 let fixedValue = inputValue.replace(/\D/g, ''); // 移除非數字
+
+                // 確保只允許數字，並防止數字顛倒
+                let fixedValue = inputValue.replace(/\D/g, ''); // 移除非數字
                 this.innerText = fixedValue;
             });
         });
