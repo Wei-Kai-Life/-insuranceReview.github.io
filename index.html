@@ -62,7 +62,7 @@
             width: 70vw;
             margin: auto;
             display: block;
-            background-color: rgb(230, 239, 246);
+            background-color: rgb(255, 255, 255);
             padding: 10px;
             border-radius: 10px;
         }
@@ -143,7 +143,7 @@
 
 
     <script>
-        
+
         window.onload = function () {
             updateFields(); // 確保頁面載入時立即檢查並更新樣式
         };
@@ -274,46 +274,51 @@
         function saveRadarChart() {
             let captureElement = document.getElementById("capture");
 
-            // 1. 找到所有 <select>，將內容複製到 <div>
+            // 先將 <select> 選擇內容轉換為 <div>，避免擷取不到內容
             document.querySelectorAll("select").forEach(select => {
                 let selectedOption = select.options[select.selectedIndex]?.text || "";
-
-                // 創建 div 替代 select
                 let div = document.createElement("div");
                 div.textContent = selectedOption;
-                div.style.cssText = window.getComputedStyle(select).cssText; // 保留 select 的樣式
+                div.style.cssText = window.getComputedStyle(select).cssText;
                 div.style.display = "inline-block";
                 div.style.whiteSpace = "normal";
                 div.style.wordWrap = "break-word";
-                div.style.width = select.offsetWidth + "px"; // 設定與原 select 一樣的寬度
+                div.style.width = select.offsetWidth + "px";
                 div.style.height = select.offsetHeight + "px";
-                div.style.border = select.style.border; // 保持邊框
+                div.style.border = select.style.border;
                 div.style.padding = select.style.padding;
                 div.style.fontSize = select.style.fontSize;
                 div.style.textAlign = select.style.textAlign;
                 div.style.backgroundColor = select.style.backgroundColor;
 
-                // 插入 div 並隱藏 select
                 select.parentNode.insertBefore(div, select);
                 select.style.display = "none";
             });
 
-            // 2. 截圖
+            // 開始擷取畫面
             html2canvas(captureElement, {
                 useCORS: true,
                 logging: false,
                 scale: 2
             }).then(canvas => {
                 let image = canvas.toDataURL("image/png");
-                let downloadLink = document.createElement("a");
-                downloadLink.href = image;
-                downloadLink.download = "screenshot.png";
-                downloadLink.click();
 
-                // 3. 截圖完成後，移除 div，恢復 select
+                // 針對不同裝置處理
+                if (navigator.userAgent.includes("Safari") && !navigator.userAgent.includes("Chrome")) {
+                    // iOS Safari：開啟新視窗讓用戶手動長按存圖
+                    window.open(image, "_blank");
+                } else {
+                    // 其他裝置（Android & PC）：正常下載
+                    let downloadLink = document.createElement("a");
+                    downloadLink.href = image;
+                    downloadLink.download = "screenshot.png";
+                    downloadLink.click();
+                }
+
+                // 恢復原本的 <select> 顯示
                 document.querySelectorAll("select").forEach(select => {
-                    select.style.display = "inline-block"; // 恢復顯示 select
-                    select.previousSibling.remove(); // 移除替換的 div
+                    select.style.display = "inline-block";
+                    select.previousSibling.remove();
                 });
             });
         }
@@ -392,12 +397,17 @@
             editableDiv.addEventListener("input", function () {
                 let range = document.createRange();
                 let selection = window.getSelection();
+                let inputValue = this.innerText;
 
                 // 將游標移到最後
                 range.selectNodeContents(editableDiv);
                 range.collapse(false); // false 表示移動到最後
                 selection.removeAllRanges();
                 selection.addRange(range);
+
+                 // 確保只允許數字，並防止數字顛倒
+                 let fixedValue = inputValue.replace(/\D/g, ''); // 移除非數字
+                this.innerText = fixedValue;
             });
         });
         document.addEventListener("DOMContentLoaded", function () {
@@ -406,12 +416,18 @@
             editableDiv.addEventListener("input", function () {
                 let range = document.createRange();
                 let selection = window.getSelection();
+                let inputValue = this.innerText;
 
+            
                 // 將游標移到最後
                 range.selectNodeContents(editableDiv);
                 range.collapse(false); // false 表示移動到最後
                 selection.removeAllRanges();
                 selection.addRange(range);
+
+                 // 確保只允許數字，並防止數字顛倒
+                 let fixedValue = inputValue.replace(/\D/g, ''); // 移除非數字
+                this.innerText = fixedValue;
             });
         });
 
