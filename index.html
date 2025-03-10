@@ -91,6 +91,10 @@
             border: 1px black solid;
             border-radius: 10px;
         }
+        #input3 {
+            border: 1px black solid;
+            border-radius: 10px;
+        }
     </style>
 </head>
 
@@ -99,7 +103,7 @@
         <div class="container" id="insuranceContainer"></div>
         <div class="button-container">
             <button id="updateButton" onclick="updateRadarChart()">更新雷達圖</button>
-            <button onclick="saveRadarChart()">另存雷達圖</button>
+            <button id="saveBtn" onclick="saveRadarChart()">另存雷達圖</button>
         </div>
         <canvas id="radarChart"></canvas>
         <div>
@@ -161,7 +165,7 @@
                 <span class="input-number">目前保額：</span>
                 <div id="input2" type="number" class="input current" placeholder="目前保額" min="0" contenteditable="true">0</div>
                 <span class="input-number">建議保額：</span>
-                <div id="input2" type="number" class="input suggested" placeholder="建議保額" min="0" contenteditable="true">0</div>
+                <div id="input3" type="number" class="input suggested" placeholder="建議保額" min="0" contenteditable="true">0</div>
                 <div class="values">0 / 0</div>
             `;
             container.appendChild(div);
@@ -314,15 +318,22 @@
             let captureElement = document.getElementById("capture");
 
             html2canvas(captureElement, {
-                useCORS: true, // 允許跨域
-                logging: false, // 減少 console 訊息
-                scale: 2 // 提高解析度
+                useCORS: true,
+                logging: false,
+                scale: 2,
+                foreignObjectRendering: true // 嘗試啟用這個來渲染 HTML 內容
             }).then(canvas => {
-                let image = canvas.toDataURL("image/png"); // 轉換為 Base64
+                let image = canvas.toDataURL("image/png");
                 let downloadLink = document.createElement("a");
                 downloadLink.href = image;
-                downloadLink.download = "screenshot.png"; // 設定下載的檔名
-                downloadLink.click();
+                downloadLink.download = "screenshot.png";
+
+                // 讓 iOS/Safari 也能開啟圖片
+                if (navigator.userAgent.includes("Safari") && !navigator.userAgent.includes("Chrome")) {
+                    window.open(image, "_blank");
+                } else {
+                    downloadLink.click();
+                }
             });
         }
 
@@ -359,19 +370,22 @@
             }
         });
 
-        function removeLeadingZeros(input) {
-            input.value = input.value.replace(/^0+(\d+)/, '$1');
-        }
+       
 
         document.querySelectorAll(".input.current, .input.suggested").forEach(input => {
             input.addEventListener("input", function () {
-                removeLeadingZeros(this);
                 updateButton.textContent = "更新雷達圖";
                 updateButton.style.backgroundColor = "white";
                 updateButton.style.color = "black";
                 updateFields();
             });
         });
+
+        let inputValue = document.getElementById("input2");
+        console.log(inputValue); // 檢查是否為 null 或 undefined
+
+    
+
     </script>
 </body>
 
